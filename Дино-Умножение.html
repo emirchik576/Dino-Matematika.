@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Дино-Умножение (8 лет)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Fredoka', cursive, sans-serif;
+            touch-action: manipulation;
+        }
+
+        /* Анимация облаков */
+        .cloud-move {
+            animation: moveCloud 18s linear infinite;
+        }
+        @keyframes moveCloud {
+            0% { transform: translateX(100vw); }
+            100% { transform: translateX(-200px); }
+        }
+
+        .ground-texture {
+            background: linear-gradient(90deg, #8B5A2B 50%, #7A4E23 50%);
+            background-size: 40px 100%;
+        }
+
+        /* Анимации динозавра */
+        .dino-jump {
+            animation: dinoJumpAnim 0.75s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        @keyframes dinoJumpAnim {
+            0% { transform: translateY(0) rotate(0deg); }
+            40% { transform: translateY(-140px) rotate(-10deg); }
+            60% { transform: translateY(-140px) rotate(5deg); }
+            100% { transform: translateY(0) rotate(0deg); }
+        }
+
+        .dino-run {
+            animation: dinoBob 0.3s ease-in-out infinite alternate;
+        }
+        @keyframes dinoBob {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-5px); }
+        }
+
+        /* Анимация препятствия */
+        .obstacle-move {
+            animation: moveObstacle 0.75s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+        @keyframes moveObstacle {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-220px); }
+        }
+
+        /* Эффект звездочек */
+        .star-pop {
+            animation: starPopAnim 0.6s ease-out forwards;
+        }
+        @keyframes starPopAnim {
+            0% { opacity: 1; transform: scale(0.5) translateY(0); }
+            50% { opacity: 1; transform: scale(1.5) translateY(-40px); }
+            100% { opacity: 0; transform: scale(1) translateY(-80px); }
+        }
+
+        .shake {
+            animation: shakeAnim 0.4s ease-in-out;
+        }
+        @keyframes shakeAnim {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+
+        .btn-hover {
+            transition: all 0.15s ease;
+        }
+        .btn-hover:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-sky-400 via-sky-200 to-amber-100 min-h-screen flex flex-col justify-between items-center overflow-x-hidden select-none">
+
+    <!-- Верхняя панель (Счёт, Очки, Сердечки и Выбор Уровня) -->
+    <header class="w-full max-w-4xl p-3 md:p-4 flex flex-wrap justify-between items-center gap-2 z-10">
+        <!-- Сердечки & Счёт -->
+        <div class="flex items-center gap-3">
+            <div class="bg-white/90 backdrop-blur rounded-2xl px-3 py-1.5 border-4 border-rose-400 shadow-lg flex items-center gap-1.5">
+                <i class="fa-solid fa-heart text-rose-500 text-xl md:text-2xl animate-pulse"></i>
+                <div id="lives" class="text-xl md:text-2xl font-bold text-gray-800">❤️❤️❤️</div>
+            </div>
+            <div class="bg-white/90 backdrop-blur rounded-2xl px-3 py-1.5 border-4 border-amber-400 shadow-lg flex items-center gap-2">
+                <i class="fa-solid fa-star text-amber-500 text-xl md:text-2xl"></i>
+                <div>
+                    <div class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Очки</div>
+                    <div id="score" class="text-xl md:text-2xl font-bold text-gray-800">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Выбор Уровня Умножения -->
+        <div class="bg-white/90 backdrop-blur rounded-2xl px-3 py-1.5 border-4 border-emerald-400 shadow-lg flex items-center gap-2">
+            <i class="fa-solid fa-graduation-cap text-emerald-500 text-xl"></i>
+            <select id="table-select" onchange="changeTable(this.value)" class="bg-transparent font-bold text-gray-700 outline-none cursor-pointer text-base md:text-lg">
+                <option value="easy">Лёгкий (Таблицы 2 - 5)</option>
+                <option value="hard">Основной (Таблицы 6 - 9)</option>
+                <option value="all">Вся таблица (2 - 10)</option>
+                <option value="2">Только на 2</option>
+                <option value="3">Только на 3</option>
+                <option value="4">Только на 4</option>
+                <option value="5">Только на 5</option>
+                <option value="6">Только на 6</option>
+                <option value="7">Только на 7</option>
+                <option value="8">Только на 8</option>
+                <option value="9">Только на 9</option>
+            </select>
+        </div>
+    </header>
+
+    <!-- Игровая сцена -->
+    <main class="w-full max-w-4xl px-4 my-auto flex flex-col items-center">
+
+        <!-- Мир Динозавра -->
+        <div id="game-scene" class="w-full h-56 md:h-64 bg-gradient-to-b from-sky-300 to-emerald-200 rounded-3xl border-8 border-white shadow-2xl relative overflow-hidden flex flex-col justify-end">
+
+            <!-- Облака -->
+            <div class="absolute top-4 left-0 cloud-move opacity-80">
+                <i class="fa-solid fa-cloud text-white text-5xl"></i>
+            </div>
+            <div class="absolute top-10 left-0 cloud-move opacity-60" style="animation-delay: -9s;">
+                <i class="fa-solid fa-cloud text-white text-4xl"></i>
+            </div>
+
+            <!-- Солнце -->
+            <div class="absolute top-4 right-8 text-amber-300 text-5xl animate-pulse">
+                <i class="fa-solid fa-sun"></i>
+            </div>
+
+            <!-- Звезды прыжка -->
+            <div id="star-container" class="absolute left-32 bottom-20 z-30 pointer-events-none"></div>
+
+            <!-- Персонажи -->
+            <div class="relative w-full h-32 flex items-end px-12 z-20">
+                
+                <!-- Динозавр -->
+                <div id="dino-wrapper" class="absolute left-10 md:left-14 bottom-0 transition-all duration-300">
+                    <div id="dino" class="dino-run text-6xl md:text-7xl text-emerald-600 filter drop-shadow-md relative">
+                        <i class="fa-solid fa-dragon"></i>
+                    </div>
+                </div>
+
+                <!-- Препятствие -->
+                <div id="obstacle" class="absolute left-[240px] md:left-[270px] bottom-0 text-5xl md:text-6xl text-emerald-800 filter drop-shadow-md">
+                    <i class="fa-solid fa-seedling"></i>
+                </div>
+
+                <!-- Финишный флажок -->
+                <div class="absolute right-8 bottom-0 text-4xl text-amber-500 animate-bounce">
+                    <i class="fa-solid fa-flag-checkered"></i>
+                </div>
+            </div>
+
+            <!-- Дорожка -->
+            <div class="w-full h-8 bg-amber-700 border-t-4 border-emerald-500 relative overflow-hidden">
+                <div class="w-full h-full ground-texture opacity-30"></div>
+            </div>
+        </div>
+
+        <!-- Карточка с примером -->
+        <div id="quiz-card" class="w-full max-w-xl mt-4 md:mt-6 bg-white rounded-3xl p-5 md:p-6 border-4 border-amber-300 shadow-xl flex flex-col items-center gap-4 md:gap-5 relative">
+            
+            <!-- Пример -->
+            <div class="flex items-center gap-3 bg-amber-50 px-6 py-2.5 rounded-2xl border-2 border-amber-200">
+                <span class="text-gray-500 text-lg md:text-xl font-bold">Сколько будет:</span>
+                <span id="question" class="text-3xl md:text-5xl font-black text-indigo-600 tracking-wider">
+                    2 × 2 = ?
+                </span>
+            </div>
+
+            <!-- Кнопка Подсказки для 8 лет -->
+            <div class="flex items-center gap-2">
+                <button onclick="toggleHint()" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold px-4 py-1.5 rounded-xl border border-indigo-300 text-sm flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-lightbulb text-amber-500"></i>
+                    <span>Нужна подсказка?</span>
+                </button>
+            </div>
+            <div id="hint-box" class="hidden text-center bg-indigo-50 text-indigo-900 border border-indigo-200 px-4 py-2 rounded-xl text-base font-bold"></div>
+
+            <!-- Варианты Ответов -->
+            <div id="options-grid" class="grid grid-cols-2 gap-3 md:gap-4 w-full">
+                <!-- Кнопки генерируются динамически -->
+            </div>
+
+            <!-- Обратная связь -->
+            <div id="feedback" class="h-6 text-base md:text-lg font-bold text-center transition-all"></div>
+        </div>
+
+    </main>
+
+    <!-- Подвал -->
+    <footer class="w-full text-center py-3 text-gray-600 text-sm font-semibold">
+        Решай примеры — помогай Динозаврику бежать дальше! 🦖💨
+    </footer>
+
+    <!-- Аудио через Web Audio API -->
+    <script>
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioCtx();
+        }
+
+        function playJumpSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(160, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(450, audioCtx.currentTime + 0.15);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.15);
+        }
+
+        function playSuccessSound() {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(523.25, now);
+            osc.frequency.setValueAtTime(659.25, now + 0.1);
+            osc.frequency.setValueAtTime(783.99, now + 0.2);
+            gain.gain.setValueAtTime(0.25, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(now + 0.4);
+        }
+
+        function playErrorSound() {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(200, now);
+            osc.frequency.linearRampToValueAtTime(100, now + 0.25);
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(now + 0.25);
+        }
+    </script>
+
+    <!-- Логика Игры -->
+    <script>
+        let factorA = 2;
+        let factorB = 2;
+        let correctAnswer = 4;
+        let score = 0;
+        let lives = 3;
+        let selectedMode = 'easy';
+        let isAnimating = false;
+
+        const obstacleIcons = ['fa-seedling', 'fa-tree', 'fa-bugs', 'fa-mountain', 'fa-skull'];
+
+        const dino = document.getElementById('dino');
+        const obstacle = document.getElementById('obstacle');
+        const questionEl = document.getElementById('question');
+        const optionsGrid = document.getElementById('options-grid');
+        const scoreEl = document.getElementById('score');
+        const livesEl = document.getElementById('lives');
+        const feedbackEl = document.getElementById('feedback');
+        const starContainer = document.getElementById('star-container');
+        const quizCard = document.getElementById('quiz-card');
+        const hintBox = document.getElementById('hint-box');
+
+        function changeTable(val) {
+            selectedMode = val;
+            score = 0;
+            lives = 3;
+            updateStats();
+            generateQuestion();
+        }
+
+        function toggleHint() {
+            if (hintBox.classList.contains('hidden')) {
+                // Генерируем текст подсказки: 4 × 3 = 4 + 4 + 4
+                let additionArray = [];
+                for (let i = 0; i < factorB; i++) {
+                    additionArray.push(factorA);
+                }
+                hintBox.textContent = `${factorA} × ${factorB} — это ${additionArray.join(' + ')}`;
+                hintBox.classList.remove('hidden');
+            } else {
+                hintBox.classList.add('hidden');
+            }
+        }
+
+        function generateQuestion() {
+            initAudio();
+            hintBox.classList.add('hidden');
+
+            // Определение диапазонов чисел в зависимости от выбранного режима
+            if (selectedMode === 'easy') {
+                factorA = Math.floor(Math.random() * 4) + 2; // 2..5
+                factorB = Math.floor(Math.random() * 9) + 2; // 2..10
+            } else if (selectedMode === 'hard') {
+                factorA = Math.floor(Math.random() * 4) + 6; // 6..9
+                factorB = Math.floor(Math.random() * 8) + 2; // 2..9
+            } else if (selectedMode === 'all') {
+                factorA = Math.floor(Math.random() * 9) + 2; // 2..10
+                factorB = Math.floor(Math.random() * 9) + 2; // 2..10
+            } else {
+                factorA = parseInt(selectedMode);
+                factorB = Math.floor(Math.random() * 9) + 2;
+            }
+
+            correctAnswer = factorA * factorB;
+            questionEl.textContent = `${factorA} × ${factorB} = ?`;
+
+            // Генерируем варианты ответов
+            const options = new Set();
+            options.add(correctAnswer);
+
+            while (options.size < 4) {
+                let offset = (Math.floor(Math.random() * 5) - 2) * factorA;
+                if (offset === 0) offset = (Math.random() > 0.5 ? 1 : -1) * factorB;
+                let fake = correctAnswer + offset;
+
+                if (fake > 0 && fake !== correctAnswer) {
+                    options.add(fake);
+                } else {
+                    options.add(Math.floor(Math.random() * 50) + 2);
+                }
+            }
+
+            const shuffled = Array.from(options).sort(() => Math.random() - 0.5);
+
+            optionsGrid.innerHTML = '';
+            shuffled.forEach(ans => {
+                const btn = document.createElement('button');
+                btn.className = `btn-hover bg-amber-400 hover:bg-amber-300 text-amber-950 text-2xl md:text-3xl font-black py-3 md:py-4 px-4 rounded-2xl border-b-4 border-amber-600 shadow-md flex justify-center items-center`;
+                btn.textContent = ans;
+                btn.onclick = () => checkAnswer(ans, btn);
+                optionsGrid.appendChild(btn);
+            });
+
+            // Новое препятствие
+            const randomIcon = obstacleIcons[Math.floor(Math.random() * obstacleIcons.length)];
+                obstacle.innerHTML = `<i class="fa-solid ${randomIcon}"></i>`;
+        }
+
+        function checkAnswer(selected, buttonEl) {
+            if (isAnimating) return;
+            initAudio();
+
+            if (selected === correctAnswer) {
+                isAnimating = true;
+                score += 10;
+                updateStats();
+
+                playJumpSound();
+                setTimeout(playSuccessSound, 150);
+
+                buttonEl.classList.remove('bg-amber-400', 'hover:bg-amber-300', 'border-amber-600');
+                buttonEl.classList.add('bg-emerald-500', 'text-white', 'border-emerald-700');
+
+                showFeedback('Молодец! Отличный прыжок! 🦖✨', 'text-emerald-600');
+                spawnStars();
+
+                dino.classList.remove('dino-run');
+                dino.classList.add('dino-jump');
+                obstacle.classList.add('obstacle-move');
+
+                setTimeout(() => {
+                    dino.classList.remove('dino-jump');
+                    dino.classList.add('dino-run');
+                    obstacle.classList.remove('obstacle-move');
+                    isAnimating = false;
+                    generateQuestion();
+                    showFeedback('', '');
+                }, 750);
+
+            } else {
+                lives--;
+                updateStats();
+                playErrorSound();
+
+                quizCard.classList.add('shake');
+                buttonEl.classList.remove('bg-amber-400', 'hover:bg-amber-300', 'border-amber-600');
+                buttonEl.classList.add('bg-rose-500', 'text-white', 'border-rose-700');
+
+                if (lives <= 0) {
+                    showFeedback(`Игра окончена! Правильный ответ был: ${correctAnswer}`, 'text-rose-600');
+                    setTimeout(() => {
+                        alert(`Игра окончена! Ты набрал ${score} очков. Давай попробуем ещё раз!`);
+                        score = 0;
+                        lives = 3;
+                        updateStats();
+                        generateQuestion();
+                        showFeedback('', '');
+                    }, 500);
+                } else {
+                    showFeedback(`Почти получилось! Правильно: ${correctAnswer}`, 'text-rose-600');
+                    setTimeout(() => {
+                        quizCard.classList.remove('shake');
+                        buttonEl.classList.remove('bg-rose-500', 'text-white', 'border-rose-700');
+                        buttonEl.classList.add('bg-amber-400', 'hover:bg-amber-300', 'border-amber-600');
+                    }, 600);
+                }
+            }
+        }
+
+        function updateStats() {
+            scoreEl.textContent = score;
+            livesEl.textContent = '❤️'.repeat(Math.max(0, lives));
+        }
+
+        function showFeedback(text, colorClass) {
+            feedbackEl.className = `h-6 text-base md:text-lg font-bold text-center transition-all ${colorClass}`;
+            feedbackEl.textContent = text;
+        }
+
+        function spawnStars() {
+            for (let i = 0; i < 5; i++) {
+                const star = document.createElement('div');
+                star.className = 'absolute text-amber-400 text-2xl star-pop';
+                star.innerHTML = '<i class="fa-solid fa-star"></i>';
+                star.style.left = `${Math.random() * 40 - 20}px`;
+                star.style.top = `${Math.random() * 20 - 10}px`;
+                starContainer.appendChild(star);
+
+                setTimeout(() => star.remove(), 600);
+            }
+        }
+
+        window.onload = function() {
+            generateQuestion();
+        };
+    </script>
+</body>
+</html>
